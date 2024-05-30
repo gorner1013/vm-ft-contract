@@ -271,7 +271,7 @@ impl L1xFtErc20 {
             Some(allowance) => allowance.get(&spender_id).into(),
             None => 0.into(),
         }
-    }
+    } 
 
     fn mint(&mut self, recipient_id: &Address, amount: u128) {
         let receiver_balance = self.balance_of(&recipient_id).unwrap_or_default();
@@ -374,4 +374,24 @@ impl L1xFtErc20 {
     fn save(&mut self) {
         l1x_sdk::storage_write(STORAGE_CONTRACT_KEY, &self.try_to_vec().unwrap());
     }
+
+    fn mint(&mut self, recipient_id: &Address, amount: u128) {
+        let receiver_balance = self.balance_of(&recipient_id).unwrap_or_default();
+
+        let total_supply = self
+            .total_supply
+            .checked_add(amount)
+            .expect("total_supply is overflowed");
+        self.total_supply = total_supply;
+        self.balances.insert(
+            recipient_id.clone(),
+            receiver_balance
+                .checked_add(amount)
+                .expect("Balance overflowed"),
+        );
+
+        l1x_sdk::msg(&format!("Minted {} tokens for {}", amount, recipient_id));
+    }
 }
+
+
